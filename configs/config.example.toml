@@ -1,0 +1,7 @@
+[twitch]
+admin = "cool_admin_channel_name"
+bot_name = "cool_bot_name"
+channel = "cool_channel_name"
+client_id = "blah-blah-blah"
+client_secret = "blah-blah-blah"
+check_every_sec = 15

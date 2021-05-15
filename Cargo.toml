@@ -1,0 +1,23 @@
+[package]
+name = "develbot"
+version = "0.1.0"
+authors = ["Mikhail Vedernikov <misha.smert@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+anyhow = "1.0.40"
+clap = "2.33.3"
+hyper = { version = "0.14.7", features = ["http1", "runtime", "server"] }
+log = "0.4.14"
+log4rs = { version = "1.0.0", features = ["toml_format"] }
+reqwest = "0.11.3"
+oneshot = "0.1.2"
+serde = { version = "1.0.125", features = ["derive"] }
+sqlx = { version = "0.5.2", default-features = false, features = ["runtime-tokio-native-tls", "postgres", "uuid", "chrono", "tls"] }
+tiny_http = "0.8.1"
+tokio = { version = "1.5.0", features = ["rt", "rt-multi-thread", "macros", "sync", "time"] }
+toml = "0.5.8"
+twitch_api2 = { version = "0.5.0", features = ["twitch_oauth2", "client", "helix", "tmi", "reqwest_client"] }
+twitch-irc = { version = "2.2.0", features = ["refreshing-token", "transport-wss"] }
+twitch_oauth2 = "0.5.0"
+url = "2.2.2"

@@ -1,0 +1,5 @@
+.idea
+configs/*
+!configs/config.example.toml
+!configs/logger.toml
+target
