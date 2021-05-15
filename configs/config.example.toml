@@ -1,3 +1,7 @@
+[global]
+auth_host = 'localhost'
+auth_port = 8099
+
 [twitch]
 admin = "cool_admin_channel_name"
 bot_name = "cool_bot_name"
