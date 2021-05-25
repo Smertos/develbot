@@ -7,19 +7,23 @@ use crate::bot::TwitchChatClient;
 
 use super::COMMAND_PREFIX;
 use super::core::Command;
+use sqlx::PgPool;
+use crate::database::entity::chat_log_message::ChatLogMessage;
 
 pub struct MessageProcessor {
     chat_client: Arc<RwLock<TwitchChatClient>>,
     commands: Vec<Command>,
+    db_pool: Arc<RwLock<PgPool>>,
 }
 
 impl MessageProcessor {
-    pub fn new(chat_client: Arc<RwLock<TwitchChatClient>>) -> Self {
+    pub fn new(chat_client: Arc<RwLock<TwitchChatClient>>, db_pool: Arc<RwLock<PgPool>>) -> Self {
         let commands = MessageProcessor::get_commands();
 
         Self {
             chat_client,
-            commands
+            commands,
+            db_pool,
         }
     }
 
@@ -72,27 +76,28 @@ impl MessageProcessor {
             ServerMessage::Ping(_) => {},
             ServerMessage::Pong(_) => {},
             ServerMessage::Privmsg(message) => {
-                let channel = message.channel_login.clone();
-                let command = self.find_matching_command(&message);
+                log::info!("<{}>: {}", message.sender.name, message.message_text);
 
+                // TODO: log message to DB
+                // message.server_timestamp
+                async {
+                    let db_pool = self.db_pool.read().await;
+                    let chat_log_message = ChatLogMessage::new(
+                        message.sender.login.clone(),
+                        message.message_text.clone(),
+                        message.server_timestamp.clone()
+                    );
+
+                    ChatLogMessage::insert(&db_pool, chat_log_message).await
+                }.await?;
+
+                let command = self.find_matching_command(&message);
                 if command.is_some() {
                     let command = command.unwrap();
                     command.execute(self, &message);
 
                     return Ok(());
                 }
-
-                if message.message_text.contains("r4ts") && message.message_text.contains("smell") {
-                    log::info!("{} said something about r4ts", message.sender.name);
-                    let response = "NOOOo. {sender_name}, you smell ever worse D:".replace(
-                        "{sender_name}",
-                        message.sender.name.as_str()
-                    );
-
-                    self.send_privmsg(channel, response.to_string());
-                }
-
-                log::info!("<{}>: {}", message.sender.name, message.message_text);
             },
             ServerMessage::Reconnect(_) => {
                 log::debug!("Reconnected");

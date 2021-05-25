@@ -6,22 +6,19 @@ use clap::ArgMatches;
 use serde::{Deserialize, Serialize};
 use twitch_oauth2::{AppAccessToken, UserToken};
 
-#[derive(Debug)]
-pub struct Config {
-    pub app_config: AppConfig,
-    pub config_path: String,
-}
-
-#[derive(Debug, Deserialize, Serialize)]
-pub struct AppConfig {
-    pub global: GlobalConfig,
-    pub twitch: TwitchConfig,
-}
-
 #[derive(Debug, Deserialize, Serialize)]
 pub struct GlobalConfig {
     pub auth_host: String,
     pub auth_port: u64,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct DatabaseConfig {
+    pub host: String,
+    pub port: u16,
+    pub username: String,
+    pub password: String,
+    pub database: String,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -36,6 +33,19 @@ pub struct TwitchConfig {
     pub check_every_sec: Option<u64>,
     pub user_access_token: Option<String>,
     pub user_refresh_token: Option<String>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct AppConfig {
+    pub global: GlobalConfig,
+    pub database: DatabaseConfig,
+    pub twitch: TwitchConfig,
+}
+
+#[derive(Debug)]
+pub struct Config {
+    pub app_config: AppConfig,
+    pub config_path: String,
 }
 
 impl Config {

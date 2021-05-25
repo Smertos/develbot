@@ -20,13 +20,14 @@ mod auth;
 mod bot;
 mod commands;
 mod config;
-// mod database;
+mod database;
 
 use bot::Bot;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use crate::config::Config;
 use crate::auth::TokenClient;
+use crate::database::connect_db;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -55,20 +56,35 @@ async fn main() -> anyhow::Result<()> {
                 .takes_value(true),
         );
 
+    // Parse args
     let args: ArgMatches<'static> = app.get_matches();
 
+    // Initiate logs
     log4rs::init_file(args.value_of("log-config").unwrap(), Default::default())?;
 
     log::debug!("{} version {} starting...", crate_name!(), crate_version!());
 
-    let config = Arc::new(RwLock::new(Config::from_args(&args)?));
+    // Create & load the config
+    let config = Config::from_args(&args)?;
+    let config = Arc::new(RwLock::new(config));
+
+    // Create token checker client
     let token_client = TokenClient::new(config.clone()).await?;
     let token_client_ref: Arc<RwLock<TokenClient>> = Arc::new(RwLock::new(token_client));
 
-    let bot: Bot<'static> = Bot::<'static>::new(&args, config, token_client_ref).await?;
-    log::debug!("Bot ready for work");
+    // Create database pool and establish connection
+    let db_pool = connect_db(config.clone()).await?;
+    let db_pool = Arc::new(RwLock::new(db_pool));
 
-    bot.start_chat_processor().await;
+    // Create bot instance
+    let bot: Bot<'static> = Bot::<'static>::new(
+        &args,
+        config,
+        db_pool,
+        token_client_ref
+    ).await?;
+
+    bot.start_chat_processor().await?;
 
     /* loop {
         std::thread::sleep(std::time::Duration::from_secs(5));

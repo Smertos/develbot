@@ -6,6 +6,7 @@ edition = "2018"
 
 [dependencies]
 anyhow = "1.0.40"
+chrono = "0.4.19"
 clap = "2.33.3"
 hyper = { version = "0.14.7", features = ["http1", "runtime", "server"] }
 log = "0.4.14"
@@ -13,7 +14,7 @@ log4rs = { version = "1.0.0", features = ["toml_format"] }
 reqwest = "0.11.3"
 oneshot = "0.1.2"
 serde = { version = "1.0.125", features = ["derive"] }
-sqlx = { version = "0.5.2", default-features = false, features = ["runtime-tokio-native-tls", "postgres", "uuid", "chrono", "tls"] }
+sqlx = { version = "0.5.2", default-features = false, features = ["chrono", "macros", "postgres", "runtime-tokio-native-tls", "tls", "uuid"] }
 tiny_http = "0.8.1"
 tokio = { version = "1.5.0", features = ["rt", "rt-multi-thread", "macros", "sync", "time"] }
 toml = "0.5.8"

@@ -2,6 +2,13 @@
 auth_host = 'localhost'
 auth_port = 8099
 
+[database] # PostgreSQL only
+host = "localhost"
+port = 5432
+username = "postgres"
+password = "postgres"
+database = "develbot"
+
 [twitch]
 admin = "cool_admin_channel_name"
 bot_name = "cool_bot_name"

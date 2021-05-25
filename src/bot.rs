@@ -9,38 +9,57 @@ use twitch_oauth2::{AppAccessToken, UserToken};
 use crate::auth::TokenClient;
 use crate::commands::processor::MessageProcessor;
 use crate::config::Config;
-use twitch_irc::message::AsRawIRC;
+use sqlx::PgPool;
 
 pub type TwitchChatClient = TwitchIRCClient<WSSTransport, StaticLoginCredentials>;
 
+// There's a lot of Arc+RwLock combos, should think if it's possible to reduce their amount
+// Otherwise they'll just keep piling up
 pub struct Bot<'a> {
     pub args: ArgMatches<'static>,
     pub chat_client: Arc<RwLock<TwitchChatClient>>,
     pub chat_incoming_messages: Arc<RwLock<UnboundedReceiver<ServerMessage>>>,
     pub config: Arc<RwLock<Config>>,
+    pub db_pool: Arc<RwLock<PgPool>>,
     pub message_processor: Arc<RwLock<MessageProcessor>>,
     pub token_client: Arc<RwLock<TokenClient>>,
     pub twitch_client: TwitchClient<'a, reqwest::Client>,
 }
 
 impl<'a> Bot<'a> {
-    pub async fn new(args: &ArgMatches<'static>, config: Arc<RwLock<Config>>, token_client: Arc<RwLock<TokenClient>>) -> anyhow::Result<Bot<'a>> {
-
+    pub async fn new(
+        args: &ArgMatches<'static>,
+        config: Arc<RwLock<Config>>,
+        db_pool: Arc<RwLock<PgPool>>,
+        token_client: Arc<RwLock<TokenClient>>
+    ) -> anyhow::Result<Bot<'a>> {
+        // Start token checker client
         TokenClient::start(token_client.clone()).await?;
 
+        // Create Twitch chat IRC client
         let (chat_client, chat_incoming_messages) = Bot::create_irc_client(config.clone(), token_client.clone()).await?;
 
         let chat_client = Arc::new(RwLock::new(chat_client));
         let chat_incoming_messages = Arc::new(RwLock::new(chat_incoming_messages));
 
-        let message_processor = MessageProcessor::new(chat_client.clone());
+        // Create message processor
+        let message_processor = MessageProcessor::new(chat_client.clone(), db_pool.clone());
         let message_processor = Arc::new(RwLock::new(message_processor));
+
+        let channel_name = async {
+            let config_lock = config.read().await;
+
+            config_lock.app_config.twitch.channel.clone()
+        }.await;
+
+        log::info!("Started bot for channel '{}'", channel_name);
 
         Ok(Bot {
             args: args.clone(),
             chat_client,
             chat_incoming_messages,
             config,
+            db_pool,
             message_processor,
             token_client,
             twitch_client: TwitchClient::<reqwest::Client>::default()
@@ -132,7 +151,12 @@ impl<'a> Bot<'a> {
 
             while let Some(message) = chat_incoming_messages.recv().await {
                 let message_processor = message_processor.read().await;
-                message_processor.process_message(&message).await;
+                let result = message_processor.process_message(&message).await;
+
+                match result {
+                    Err(message) => log::error!("Failed to process message: {}", message),
+                    _ => {},
+                }
             }
         });
 
@@ -142,7 +166,7 @@ impl<'a> Bot<'a> {
             log::info!("Joined the chat");
         }.await;
 
-        chat_task_handle.await;
+        chat_task_handle.await?;
 
         Ok(())
     }
