@@ -4,7 +4,7 @@ use twitch_irc::message::PrivmsgMessage;
 
 use self::processor::MessageProcessor;
 
-static COMMAND_PREFIX: &'static str = "!";
+static COMMAND_PREFIX: &'static str = "~";
 
 pub mod core;
 pub mod processor;
