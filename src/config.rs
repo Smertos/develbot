@@ -14,11 +14,12 @@ pub struct GlobalConfig {
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct DatabaseConfig {
-    pub host: String,
-    pub port: u16,
-    pub username: String,
-    pub password: String,
-    pub database: String,
+    pub socket: Option<String>,
+    pub host: Option<String>,
+    pub port: Option<u16>,
+    pub username: Option<String>,
+    pub password: Option<String>,
+    pub database: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
