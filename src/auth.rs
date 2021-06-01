@@ -248,8 +248,8 @@ impl TokenClient {
         thread::spawn({
             let local_this = this.clone();
 
-            async move || {
-                let is_running = async || -> bool {
+            move || async move {
+                let is_running = || async {
                     let this_clone = local_this.clone();
                     let lock = this_clone.read().await;
 

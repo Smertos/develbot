@@ -1,6 +1,3 @@
-#![feature(async_closure)]
-#![feature(try_trait)]
-
 extern crate anyhow;
 extern crate clap;
 extern crate hyper;

@@ -1,0 +1,30 @@
+version: '3.8'
+services:
+    app:
+        build:
+            args:
+                - CARGO_BUILD_ARGS=""
+                - TARGET_TYPE="debug"
+            context: .
+        container_name: develbot_app
+        depends_on:
+            -   db
+        networks:
+            - ipc
+        restart: always
+        volumes:
+            - ./configs:/app/configs
+    db:
+        container_name: develbot_db
+        environment:
+            - POSTGRES_PASSWORD=postgres
+        image: postgres:13.3-alpine
+        networks:
+            - ipc
+        ports:
+            - "5433:5432"
+        restart: always
+        shm_size: 256MB
+
+networks:
+    ipc:

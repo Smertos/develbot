@@ -4,6 +4,12 @@ version = "0.1.0"
 authors = ["Mikhail Vedernikov <misha.smert@gmail.com>"]
 edition = "2018"
 
+[[bin]]
+name = "develbot"
+test = false
+bench = false
+path = "src/main.rs"
+
 [dependencies]
 anyhow = "1.0.40"
 chrono = "0.4.19"
