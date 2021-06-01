@@ -98,6 +98,7 @@ impl<'a> Bot<'a> {
     }
 
     // Returned data is immutable
+    #[allow(dead_code)]
     pub async fn get_app_token(&'a self) -> anyhow::Result<AppAccessToken> {
         let token_client_raw = self.token_client.read().await;
         let token_ref: Option<AppAccessToken> = token_client_raw.app_token.clone();
@@ -108,6 +109,7 @@ impl<'a> Bot<'a> {
     }
 
     // Returned data is immutable
+    #[allow(dead_code)]
     pub async fn get_user_token(&'a self) -> anyhow::Result<UserToken> {
         let token_client_raw = self.token_client.read().await;
         let token_ref: Option<UserToken> = token_client_raw.user_token.clone();
@@ -117,6 +119,7 @@ impl<'a> Bot<'a> {
         Ok(token)
     }
 
+    #[allow(dead_code)]
     pub async fn get_channel_information(&'a mut self, channel_name: &'static str) -> anyhow::Result<Option<ChannelInformation>> {
         let client = &self.twitch_client;
         let token = &self.get_app_token().await?;

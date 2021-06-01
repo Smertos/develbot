@@ -3,6 +3,7 @@ use twitch_irc::message::PrivmsgMessage;
 use super::CommandFn;
 use super::processor::MessageProcessor;
 
+#[allow(dead_code)]
 pub struct Command {
     /// Function that performs the assigned logic of the command
     command_fn: CommandFn,

@@ -13,6 +13,7 @@ pub struct Chatter {
 impl Chatter {
     const CURRENT_VERSION: i16 = 1_i16;
 
+    #[allow(dead_code)]
     pub fn new(login: String, name: String) -> Self {
         Self {
             login,
@@ -35,6 +36,7 @@ impl Chatter {
         Ok(())
     }
 
+    #[allow(dead_code)]
     pub async fn find_one(pool: &PgPool, login: String) -> anyhow::Result<Chatter> {
         let result = sqlx::query_as::<_, Chatter>("\
             SELECT * from chatters \
@@ -47,6 +49,7 @@ impl Chatter {
         Ok(result)
     }
 
+    #[allow(dead_code)]
     pub async fn upsert(pool: &PgPool, chatter: Self) -> anyhow::Result<()> {
         sqlx::query("\
             INSERT INTO chatters (login, name, created_at, version) \

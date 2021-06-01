@@ -13,6 +13,7 @@ pub struct ChatLogMessage {
 impl ChatLogMessage {
     const CURRENT_VERSION: i16 = 1_i16;
 
+    #[allow(dead_code)]
     pub fn new(chatter_login: String, message: String, posted_at: DateTime<Utc>) -> Self {
         Self {
             id: Option::None,
@@ -37,6 +38,7 @@ impl ChatLogMessage {
         Ok(())
     }
 
+    #[allow(dead_code)]
     pub async fn insert(pool: &PgPool, chat_log_message: Self) -> anyhow::Result<()> {
         sqlx::query("\
             INSERT INTO chat_logs (chatter_login, message, posted_at, version) \
