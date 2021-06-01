@@ -11,4 +11,7 @@ kind = "console"
 # Set the default logging level to "warn" and attach the "stdout" appender to the root
 [root]
 appenders = ["stdout"]
+level = "warn"
+
+[loggers.develbot]
 level = "debug"
