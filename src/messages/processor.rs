@@ -7,12 +7,15 @@ use crate::bot::TwitchChatClient;
 
 use super::COMMAND_PREFIX;
 use super::core::Command;
+use super::commands::hello_command::HelloCommand;
 use sqlx::PgPool;
 use crate::database::entity::chat_log_message::ChatLogMessage;
+use crate::messages::commands::CommandItem;
+use crate::messages::commands::current_command::CurrentCommand;
 
 pub struct MessageProcessor {
     chat_client: Arc<RwLock<TwitchChatClient>>,
-    commands: Vec<Command>,
+    commands: Vec<CommandItem>,
     db_pool: Arc<RwLock<PgPool>>,
 }
 
@@ -27,23 +30,17 @@ impl MessageProcessor {
         }
     }
 
-    pub fn get_commands() -> Vec<Command> {
+    pub fn get_commands() -> Vec<CommandItem> {
         vec![
-            Command::new(
-                "Say Hello",
-                "Says 'Hello chat' in the chat",
-                "hello",
-                Arc::new(Box::new(|processor, message| {
-                    let channel = message.channel_login.clone();
-                    processor.send_privmsg(channel, "Hello, chat!".to_string());
-                }))
-            ),
+            HelloCommand::default(),
+            CurrentCommand::default(),
         ]
     }
 
-    pub fn find_matching_command(&self, message: &PrivmsgMessage) -> Option<&Command> {
+    pub fn find_matching_command(&self, message: &PrivmsgMessage) -> Option<&CommandItem> {
         for command in self.commands.iter() {
-            let slug_with_prefix = format!("{}{}", COMMAND_PREFIX, command.get_slug());
+            let command_info = command.get_command_info();
+            let slug_with_prefix = format!("{}{}", COMMAND_PREFIX, command_info.get_slug());
 
             if message.message_text.starts_with(slug_with_prefix.as_str()) {
                 return Option::Some(command);
@@ -118,7 +115,6 @@ impl MessageProcessor {
 
     pub fn send_privmsg(&self, channel: String, message: String) {
         let client = self.chat_client.clone();
-        log::debug!("Lets try to send a privmsg");
 
         tokio::spawn(async move {
             let channel = channel.clone();

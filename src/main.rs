@@ -1,5 +1,6 @@
 extern crate anyhow;
 extern crate clap;
+extern crate enum_dispatch;
 extern crate hyper;
 extern crate log;
 extern crate log4rs;
@@ -15,7 +16,7 @@ use clap::{crate_authors, crate_description, crate_name, crate_version, App, Arg
 
 mod auth;
 mod bot;
-mod commands;
+mod messages;
 mod config;
 mod database;
 

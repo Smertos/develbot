@@ -2,12 +2,12 @@ use std::sync::Arc;
 
 use clap::ArgMatches;
 use tokio::sync::{mpsc::UnboundedReceiver, RwLock};
-use twitch_api2::{helix::channels::{ChannelInformation, GetChannelInformationRequest}, TwitchClient};
+use twitch_api2::{helix::channels::ChannelInformation, TwitchClient};
 use twitch_irc::{ClientConfig, login::StaticLoginCredentials, message::ServerMessage, TwitchIRCClient, WSSTransport};
 use twitch_oauth2::{AppAccessToken, UserToken};
 
 use crate::auth::TokenClient;
-use crate::commands::processor::MessageProcessor;
+use crate::messages::processor::MessageProcessor;
 use crate::config::Config;
 use sqlx::PgPool;
 
@@ -123,15 +123,9 @@ impl<'a> Bot<'a> {
     pub async fn get_channel_information(&'a mut self, channel_name: &'static str) -> anyhow::Result<Option<ChannelInformation>> {
         let client = &self.twitch_client;
         let token = &self.get_app_token().await?;
+        let user_id = twitch_api2::types::UserId::from(channel_name);
 
-        let channel_info: Option<ChannelInformation> = client.helix.req_get(
-            GetChannelInformationRequest::builder()
-                .broadcaster_id(twitch_api2::types::UserId::from(channel_name))
-                .build(),
-            token,
-        )
-            .await
-            .map(|response| response.first())?;
+        let channel_info = client.helix.get_channel_from_id(user_id, token).await?;
 
         Ok(channel_info)
     }

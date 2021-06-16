@@ -38,20 +38,15 @@ impl TokenClient {
         if token.as_ref().is_some() && !token.as_ref().unwrap().access_token.secret().is_empty() {
             match token.unwrap().validate_token(reqwest_http_client).await {
                 Err(_) => {
-                    // log::debug!("Failed to validate token");
                     TokenClient::get_app_token(token_client, config).await?;
                 },
                 Ok(validated_token) => {
                     if validated_token.expires_in.as_secs() <= validity_period {
-                        // log::debug!("dying token, getting a new one");
                         TokenClient::get_app_token(token_client, config).await?;
-                    } else {
-                        // log::debug!("Token good");
                     }
                 },
             }
         } else {
-            log::debug!("No token provided, getting a new one...");
             TokenClient::get_app_token(token_client, config).await?;
         }
 
@@ -105,8 +100,6 @@ impl TokenClient {
         let redirect_url_src = String::from(format!("http://{}/oauth-receive/", host_port.clone()));
         let redirect_url = RedirectUrl::new(redirect_url_src.clone())?;
 
-        log::debug!("redirect url: {}", redirect_url_src);
-
         let mut builder = UserTokenBuilder::new(client_id.clone(), client_secret.clone(), redirect_url.clone())?
             .set_scopes(Scope::all());
         let (authorize_url, csrf) = builder.generate_url();
@@ -129,8 +122,6 @@ impl TokenClient {
 
                 Ok(())
             }
-
-            log::debug!("url: {}", request.url());
 
             let full_url = format!("http://{}{}", host_port, request.url());
             let url_dangerous = url::Url::parse(full_url.as_str());
