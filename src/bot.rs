@@ -1,22 +1,23 @@
 use std::sync::Arc;
 
 use clap::ArgMatches;
+use sqlx::PgPool;
 use tokio::sync::{mpsc::UnboundedReceiver, RwLock};
 use twitch_api2::{helix::channels::ChannelInformation, TwitchClient};
 use twitch_irc::{ClientConfig, login::StaticLoginCredentials, message::ServerMessage, TwitchIRCClient, WSSTransport};
 use twitch_oauth2::{AppAccessToken, UserToken};
 
 use crate::auth::TokenClient;
+use crate::config::{ChannelInfo, Config};
 use crate::messages::processor::MessageProcessor;
-use crate::config::Config;
-use sqlx::PgPool;
 
 pub type TwitchChatClient = TwitchIRCClient<WSSTransport, StaticLoginCredentials>;
 
 // There's a lot of Arc+RwLock combos, should think if it's possible to reduce their amount
 // Otherwise they'll just keep piling up
 pub struct Bot<'a> {
-    pub args: ArgMatches<'static>,
+    pub args: Arc<RwLock<ArgMatches<'static>>>,
+    pub channel_info: ChannelInfo,
     pub chat_client: Arc<RwLock<TwitchChatClient>>,
     pub chat_incoming_messages: Arc<RwLock<UnboundedReceiver<ServerMessage>>>,
     pub config: Arc<RwLock<Config>>,
@@ -28,7 +29,8 @@ pub struct Bot<'a> {
 
 impl<'a> Bot<'a> {
     pub async fn new(
-        args: &ArgMatches<'static>,
+        args: Arc<RwLock<ArgMatches<'static>>>,
+        channel_info: ChannelInfo,
         config: Arc<RwLock<Config>>,
         db_pool: Arc<RwLock<PgPool>>,
         token_client: Arc<RwLock<TokenClient>>
@@ -46,16 +48,11 @@ impl<'a> Bot<'a> {
         let message_processor = MessageProcessor::new(chat_client.clone(), db_pool.clone());
         let message_processor = Arc::new(RwLock::new(message_processor));
 
-        let channel_name = async {
-            let config_lock = config.read().await;
-
-            config_lock.app_config.twitch.channel.clone()
-        }.await;
-
-        log::info!("Started bot for channel '{}'", channel_name);
+        log::info!("Started bot for channel '{}'", channel_info.channel.as_str());
 
         Ok(Bot {
             args: args.clone(),
+            channel_info,
             chat_client,
             chat_incoming_messages,
             config,
@@ -120,7 +117,7 @@ impl<'a> Bot<'a> {
     }
 
     #[allow(dead_code)]
-    pub async fn get_channel_information(&'a mut self, channel_name: &'static str) -> anyhow::Result<Option<ChannelInformation>> {
+    pub async fn get_channel_information(&'a self, channel_name: &'static str) -> anyhow::Result<Option<ChannelInformation>> {
         let client = &self.twitch_client;
         let token = &self.get_app_token().await?;
         let user_id = twitch_api2::types::UserId::from(channel_name);
@@ -132,12 +129,6 @@ impl<'a> Bot<'a> {
 
     pub async fn start_chat_processor(&self) -> anyhow::Result<()> {
         log::debug!("Starting bot's chat processor");
-
-        let channel = {
-            let config = self.config.read().await;
-
-            config.app_config.twitch.channel.clone()
-        };
 
         let chat_incoming_messages = self.chat_incoming_messages.clone();
         let message_processor = self.message_processor.clone();
@@ -159,7 +150,7 @@ impl<'a> Bot<'a> {
 
         async {
             let client = self.chat_client.read().await;
-            client.join(channel.to_owned());
+            client.join(self.channel_info.channel.clone());
             log::info!("Joined the chat");
         }.await;
 

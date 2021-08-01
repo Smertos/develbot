@@ -1,9 +1,10 @@
 use std::fs::File;
 use std::io::prelude::*;
+use std::sync::Arc;
 
 use clap::ArgMatches;
-
 use serde::{Deserialize, Serialize};
+use tokio::sync::RwLock;
 use twitch_oauth2::{AppAccessToken, UserToken};
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -24,11 +25,9 @@ pub struct DatabaseConfig {
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct TwitchConfig {
-    pub admin: String,
     pub app_access_token: Option<String>,
     pub app_refresh_token: Option<String>,
     pub bot_name: String,
-    pub channel: String,
     pub client_id: String,
     pub client_secret: String,
     pub check_every_sec: Option<u64>,
@@ -36,8 +35,15 @@ pub struct TwitchConfig {
     pub user_refresh_token: Option<String>,
 }
 
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct ChannelInfo {
+    pub admin: String,
+    pub channel: String,
+}
+
 #[derive(Debug, Deserialize, Serialize)]
 pub struct AppConfig {
+    pub channels: Vec<ChannelInfo>,
     pub global: GlobalConfig,
     pub database: DatabaseConfig,
     pub twitch: TwitchConfig,
@@ -50,7 +56,8 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn from_args(args: &ArgMatches<'static>) -> anyhow::Result<Config> {
+    pub async fn from_args(args: Arc<RwLock<ArgMatches<'static>>>) -> anyhow::Result<Config> {
+        let args = args.read().await;
         let config_path = args.value_of("app-config").unwrap().to_string(); // Safe unwrap, because we provided the default value at arg def
         let mut config_file = File::open(config_path.clone())?;
         let mut config_contents = String::new();

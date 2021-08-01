@@ -1,18 +1,20 @@
+[[channels]]
+admin = 'forsenCD'
+channel = 'pepega'
+
 [global]
 auth_host = 'localhost'
 auth_port = 8099
 
-[database] # PostgreSQL only
+[database] # PostgreSQL
 host = "localhost"
 port = 5432
-username = "postgres"
-password = "postgres"
+username = 'develbot'
+password = 'develbot'
 database = "develbot"
 
 [twitch]
-admin = "cool_admin_channel_name"
 bot_name = "cool_bot_name"
-channel = "cool_channel_name"
 client_id = "blah-blah-blah"
 client_secret = "blah-blah-blah"
 check_every_sec = 15
